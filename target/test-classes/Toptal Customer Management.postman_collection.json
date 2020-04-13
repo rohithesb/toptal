@@ -1,0 +1,109 @@
+{
+	"info": {
+		"_postman_id": "f6cdea1d-9a22-4eb5-8031-5691656fea65",
+		"name": "Toptal Customer Management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Lookup",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/toptal/api/lookup",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"toptal",
+						"api",
+						"lookup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    {\n        \"first_name\": \"test\",\n        \"middle_name\": \"test\",\n        \"last_name\": \"test\",\n        \"birth_date\": \"1900-01-01\",\n        \"height\": 5.09,\n        \"weight\": 182,\n        \"billing_street\": \"123 ABC St\",\n        \"billing_city\": \"austn\",\n        \"billing_state\": \"TX\",\n        \"billing_postal_code\": 78663,\n        \"billing_country\": \"USA\"\n    }\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/toptal/api/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"toptal",
+						"api",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/toptal/api/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"toptal",
+						"api",
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Remove",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/toptal/api/remove?client_key=74fc7739-9703-45c2-8b61-5958b0fda40b",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"toptal",
+						"api",
+						"remove"
+					],
+					"query": [
+						{
+							"key": "client_key",
+							"value": "74fc7739-9703-45c2-8b61-5958b0fda40b"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

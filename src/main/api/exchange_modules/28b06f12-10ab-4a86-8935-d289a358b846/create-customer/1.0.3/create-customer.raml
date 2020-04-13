@@ -1,0 +1,37 @@
+#%RAML 1.0 DataType
+type: object
+description: Customer Object
+properties:
+  first_name:
+    type: string
+    required: true
+  last_name:
+    type: string
+    required: true
+  birth_date:
+    type: string
+    required: true
+  middle_name:
+    type: string
+    required: false
+  height:
+    type: number
+    required: false
+  weight:
+    type: number
+    required: false
+  billing_street:
+    type: string
+    required: false
+  billing_city:
+    type: string
+    required: false
+  billing_state:
+    type: string
+    required: false
+  billing_postal_code:
+    type: integer
+    required: false
+  billing_country:
+    type: string
+    required: false

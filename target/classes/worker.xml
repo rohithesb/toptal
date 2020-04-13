@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:mulerequester="http://www.mulesoft.org/schema/mule/mulerequester" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+    <file:connector name="File1" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
+	
+	<flow name="worker_create_flow" processingStrategy="synchronous">
+        <dw:transform-message doc:name="payload">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+		<choice doc:name="Choice">
+			<when expression="#[fileExists('src\\main\\resources\\Customers-QA\\Customers.csv')]">
+				<dw:transform-message doc:name="Transform Message without Header" metadata:id="b428d872-46d0-4946-a100-fc6a80be8b03">
+					<dw:input-payload mimeType="application/json" />
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/csv header=false
+%var epoc = (dt) -> (dt as :datetime) as :number {unit: "milliseconds"}
+---
+payload map (v,i) -> {
+	"client_key" : toUUID(),
+	"first_name": v.first_name,
+	"middle_name": v.middle_name,
+	"last_name": v.last_name,
+	"birth_date": ((v.birth_date) as :string {format:'yyyy-MM-dd'} ++ 'T00:00:00') as :datetime as :number {unit: "milliseconds"},
+	"height": v.height,
+	"weight": v.weight,
+	"billing_street": v.billing_street,
+	"billing_city": v.billing_city,
+	"billing_state": v.billing_state,
+	"billing_postal_code": v.billing_postal_code,
+	"billing_country": v.billing_country,
+	"created_date": epoc(now)
+}
+]]></dw:set-payload>
+                    <dw:set-variable variableName="header"><![CDATA[%dw 1.0
+%output application/java
+---
+false]]></dw:set-variable>
+
+				</dw:transform-message>
+
+			</when>
+			<otherwise>
+				<dw:transform-message doc:name="Transform Message with Header" metadata:id="b428d872-46d0-4946-a100-fc6a80be8b03">
+					<dw:input-payload mimeType="application/json" />
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/csv header=true
+%var epoc = (dt) -> (dt as :datetime) as :number {unit: "milliseconds"}
+---
+payload map (v,i) -> {
+	"client_key" : toUUID(),
+	"first_name": v.first_name,
+	"middle_name": v.middle_name,
+	"last_name": v.last_name,
+	"birth_date": ((v.birth_date) as :string {format:'yyyy-MM-dd'} ++ 'T00:00:00') as :datetime as :number {unit: "milliseconds"},
+	"height": v.height,
+	"weight": v.weight,
+	"billing_street": v.billing_street,
+	"billing_city": v.billing_city,
+	"billing_state": v.billing_state,
+	"billing_postal_code": v.billing_postal_code,
+	"billing_country": v.billing_country,
+	"created_date": epoc(now)
+}
+]]></dw:set-payload>
+                    <dw:set-variable variableName="header"><![CDATA[%dw 1.0
+%output application/java
+---
+true]]></dw:set-variable>
+
+				</dw:transform-message>
+
+			</otherwise>
+		</choice>
+        <set-payload value="#[payload]" encoding="UTF-8" mimeType="application/csv" doc:name="Set Payload"/>
+
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+
+		<file:outbound-endpoint path="${file.path}" outputPattern="${file.name}" connector-ref="File" responseTimeout="10000" doc:name="File" />
+        <choice doc:name="Choice">
+            <when expression="flowVars.header == false">
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/csv
+%output application/json
+%var headers = payload[0] pluck $$
+---
+([{
+id : headers[0],
+jobId : headers[1]
+}] ++
+payload map {
+client_key : $[0]
+})]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload map {
+	client_key: $.client_key	
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </otherwise>
+        </choice>
+
+	</flow>
+    <flow name="worker_fetch_flow">
+        <mulerequester:request resource="file://${file.path}/${file.name}?connector=File" doc:name="File Requester" returnClass="java.lang.String" timeout="10000"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload  splitBy "\r\n"]]></dw:set-payload>
+        </dw:transform-message>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-variable variableName="header"><![CDATA[%dw 1.0
+%output application/java
+---
+payload[0]]]></dw:set-variable>
+        </dw:transform-message>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	count: (sizeOf payload) - 1,
+	results: payload filter ($ != flowVars.header) map (value, index) -> {
+		"client_key": (value splitBy ",")[0],
+        "first_name": (value splitBy ",")[1],
+        "middle_name": (value splitBy ",")[2],
+        "last_name": (value splitBy ",")[3],
+        "birth_date": ((value splitBy ",")[4]/ 1000) as :datetime as :string {format:"yyyy-dd-MM"},
+        "height": (value splitBy ",")[5],
+        "weight": (value splitBy ",")[6],
+        "billing_address": (value splitBy ",")[7] ++ ", " ++ (value splitBy ",")[8] ++ ", " ++ (value splitBy ",")[9] ++ ", " ++ (value splitBy ",")[10] ++ ", " ++ (value splitBy ",")[11],
+        "created_date": ((value splitBy ",")[12]/ 1000) as :datetime as :string {format:"yyyy-dd-MM"}
+    }
+}]]></dw:set-payload>
+        </dw:transform-message>
+
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	"message" : "No records available"
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <set-property propertyName="http.status" value="500" doc:name="Property"/>
+        </catch-exception-strategy>
+
+    </flow>
+    <flow name="worker_delete_flow">
+        <set-variable variableName="clientKey" value="#[message.inboundProperties.'http.query.params'.client_key]" doc:name="client_key"/>
+        <mulerequester:request resource="file://${file.path}/${file.name}?connector=File" doc:name="File Requester" returnClass="java.lang.String" timeout="10000"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload  splitBy "\r\n"]]></dw:set-payload>
+        </dw:transform-message>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-variable variableName="header"><![CDATA[%dw 1.0
+%output application/java
+---
+payload[0]]]></dw:set-variable>
+        </dw:transform-message>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-variable variableName="rawData"><![CDATA[%dw 1.0
+%output application/java
+---
+payload filter ($ != flowVars.header) map (value, index) -> {
+		"client_key": (value splitBy ",")[0],
+        "first_name": (value splitBy ",")[1],
+        "middle_name": (value splitBy ",")[2],
+        "last_name": (value splitBy ",")[3],
+        "birth_date": (value splitBy ",")[4],
+        "height": (value splitBy ",")[5],
+        "weight": (value splitBy ",")[6],
+        "billing_street": (value splitBy ",")[7],
+        "billing_city": (value splitBy ",")[8],
+        "billing_state": (value splitBy ",")[9],
+        "billing_postal_code": (value splitBy ",")[10],
+        "billing_country": (value splitBy ",")[11],
+        "created_date": (value splitBy ",")[12]
+    }]]></dw:set-variable>
+
+        </dw:transform-message>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-variable variableName="match"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.rawData filter ($.client_key == flowVars.clientKey) map (v,i) -> {
+	"client_key" : v.client_key,
+	"first_name": v.first_name,
+	"middle_name": v.middle_name,
+	"last_name": v.last_name,
+	"birth_date": v.birth_date,
+	"height": v.height,
+	"weight": v.weight,
+	"billing_street": v.billing_street,
+	"billing_city": v.billing_city,
+	"billing_state": v.billing_state,
+	"billing_postal_code": v.billing_postal_code,
+	"billing_country": v.billing_country,
+	"created_date": v.created_date
+}]]></dw:set-variable>
+            <dw:set-variable variableName="refined"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.rawData filter ($.client_key != flowVars.clientKey) map (v,i) -> {
+	"client_key" : v.client_key,
+	"first_name": v.first_name,
+	"middle_name": v.middle_name,
+	"last_name": v.last_name,
+	"birth_date": v.birth_date,
+	"height": v.height,
+	"weight": v.weight,
+	"billing_street": v.billing_street,
+	"billing_city": v.billing_city,
+	"billing_state": v.billing_state,
+	"billing_postal_code": v.billing_postal_code,
+	"billing_country": v.billing_country,
+	"created_date": v.created_date
+}]]></dw:set-variable>
+        </dw:transform-message>
+        <choice doc:name="Choice">
+            <when expression="#[flowVars.match.size() &gt; 0]">
+                <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[import groovy.io.FileType
+
+String folderPath = ${groovy.path}
+new File(folderPath).eachFile (FileType.FILES) { file ->
+//Delete file if file name contains Customers
+   if (file.name.contains('Customers')) file.delete()
+}]]></scripting:script>
+                </scripting:component>
+                <choice doc:name="Choice">
+                    <when expression="#[flowVars.refined.size() &gt; 0]">
+                        <set-payload value="#[flowVars.refined]" doc:name="Set Payload"/>
+                        <dw:transform-message doc:name="Transform Message">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/csv header=true
+---
+payload filter ($.client_key != flowVars.clientKey) map (v,i) -> {
+	"client_key" : v.client_key,
+	"first_name": v.first_name,
+	"middle_name": v.middle_name,
+	"last_name": v.last_name,
+	"birth_date": v.birth_date,
+	"height": v.height,
+	"weight": v.weight,
+	"billing_street": v.billing_street,
+	"billing_city": v.billing_city,
+	"billing_state": v.billing_state,
+	"billing_postal_code": v.billing_postal_code,
+	"billing_country": v.billing_country,
+	"created_date": v.created_date
+}
+]]></dw:set-payload>
+                        </dw:transform-message>
+                        <file:outbound-endpoint path="src\main\resources\Customers-QA" outputPattern="Customers.csv" connector-ref="File1" responseTimeout="10000" doc:name="File"/>
+                        <dw:transform-message doc:name="Transform Message">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"message" : "Deleted record with client key: " ++ flowVars.clientKey,
+	"time": now
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                    </when>
+                    <otherwise>
+                        <dw:transform-message doc:name="Transform Message">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"message" : "Deleted record with client key: " ++ flowVars.clientKey,
+	"time": now
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                    </otherwise>
+                </choice>
+
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"message" : "No record available with client key: " ++ flowVars.clientKey,
+	"time": now
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-property propertyName="http.status" value="500" doc:name="Property"/>
+
+            </otherwise>
+        </choice>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"message" : "No records available",
+	"time": now
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <set-property propertyName="http.status" value="500" doc:name="Property"/>
+        </catch-exception-strategy>
+
+    </flow>
+
+</mule>

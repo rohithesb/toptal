@@ -1,0 +1,98 @@
+#%RAML 1.0
+title: customer-management-toptal
+mediaType: 
+  - application/json
+types:
+  create: !include exchange_modules/28b06f12-10ab-4a86-8935-d289a358b846/create-customer/1.0.3/create-customer.raml
+  customer: !include exchange_modules/28b06f12-10ab-4a86-8935-d289a358b846/create-customer-array/1.0.1/create-customer-array.raml
+
+/health:
+  displayName: Health Check.
+  description: Health Check Endpoint.
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "message": "Status Ok",
+                "time": "2020-04-06T23:14:13.966-05:00"
+              }
+/create:
+  displayName: Create Customer.
+  description: Create Customer Endpoint.
+  post:
+    body:
+      application/json:
+        type: customer
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              [
+                {
+                  "client_key": "74fc7739-9703-45c2-8b61-5958b0fda40b"
+                }
+              ]
+/lookup:
+  displayName: Fetch Customer.
+  description: Fetch Customer Endpoint.
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+    "count": 1,
+    "results": [
+        {
+            "client_key": "74fc7739-9703-45c2-8b61-5958b0fda40b",
+            "first_name": "Rohith",
+            "middle_name": "Reddy",
+            "last_name": "Billa",
+            "birth_date": "1900-10-01",
+            "height": "5.11",
+            "weight": "200",
+            "billing_address": "100 Abc St, Austin, TX, 78663, USA",
+            "created_date": "2020-13-04"
+          }
+        ]
+       }
+      500:
+        body:
+          application/json:
+            example:
+              {
+                "message" : "No records available",
+                "time": "2020-04-07T03:50:19.432Z"
+              }
+/remove:
+  displayName: Remove Customer.
+  description: Remove Customer Endpoint.
+  delete:
+    queryParameters:
+      client_key:
+        displayName: Client Key
+        type: string
+        example: bc377f8f-bc84-4656-8d6b-0a08550dc280
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "message": "Deleted record with client key: f7500ffc-5cc6-456b-b277-a0f6c82efe10",
+                "time": "2020-04-07T03:50:19.432Z"
+              }
+      500:
+        body:
+          application/json:
+            example:
+              {
+                "message": "No record available with client key: f7500ffc-5cc6-456b-b277-a0f6c82efe10",
+                "time": "2020-04-07T03:50:19.432Z"
+              }

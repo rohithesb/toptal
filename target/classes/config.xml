@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-property-placeholder="http://www.mulesoft.org/schema/mule/secure-property-placeholder" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/secure-property-placeholder http://www.mulesoft.org/schema/mule/secure-property-placeholder/current/mule-secure-property-placeholder.xsd">
+ 	<http:listener-config name="customer-management-toptal-httpListenerConfig" host="0.0.0.0" port="${http.port}" basePath="/toptal" doc:name="HTTP Listener Configuration"/>
+    <apikit:config name="customer-management-toptal-config" raml="customer-management-toptal.raml" consoleEnabled="false" doc:name="Router"/>
+   	<file:connector name="File" autoDelete="false" streaming="true" validateConnections="true" doc:name="File" outputAppend="true" pollingFrequency="3600000"/>
+	<configuration doc:name="File Exists">
+		<expression-language>
+			<import class="java.text.SimpleDateFormat" />
+			<global-functions><![CDATA[
+	          def fileExists(path) {
+	            return java.nio.file.Files.exists(java.nio.file.Paths.get(path));
+	          }
+	        ]]></global-functions>
+		</expression-language>
+	</configuration>
+	<configuration doc:name="UUID">
+		<expression-language>
+			<global-functions>
+			  def toUUID() {
+				return java.util.UUID.randomUUID().toString()
+			  }
+			</global-functions>
+		</expression-language>
+	</configuration>
+    <secure-property-placeholder:config name="Secure_Property_Placeholder" key="${key}" location="config\${env}-config.properties" doc:name="Secure Property Placeholder"/>
+   </mule>
